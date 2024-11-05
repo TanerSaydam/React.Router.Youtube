@@ -1,78 +1,52 @@
 import axios from "axios";
-import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom";
-import { Spinner } from "./Spinner";
+import { Form, useLoaderData, redirect } from "react-router-dom";
+
+export async function action({ request }) {
+    const formData = await request.formData();
+    const data = Object.fromEntries(formData);
+    if (!data.id) data.id = null;
+    await axios.post("https://localhost:7280/create", data);
+    return redirect("/employee");
+}
+
+export async function loader({ params }) {
+    let endPoint = `https://localhost:7280/getById?id=${params.id}`
+    const response = await axios.get(endPoint);
+    return response.data
+}
 
 export function CreateEmployee() {
-    const [data, setData] = useState({});
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const [loading, setLoading] = useState(false);
-
-    function handleChange(event) {
-        const name = event.target.name;
-        const value = event.target.value;
-        setData(prev => ({ ...prev, [name]: value }));
-    }
-
-    function save(event) {
-        setLoading(true);
-        event.preventDefault();
-        axios.post("https://localhost:7280/create", data).then(() => {
-            navigate("/employee");
-            setLoading(false);
-        })
-    }
-
-    function getById() {
-        axios.get(`https://localhost:7280/getById?id=${id}`).then(res => {
-            setData(res.data);
-        });
-    }
-
-
-    useEffect(() => {
-        if (id) {
-            getById();
-        }
-    }, [])
+    const data = useLoaderData();
 
     return (
         <>
-            {loading ?
-                (<Spinner />)
-                :
-                (
-                    <>
-                        <form autoComplete="off" onSubmit={save}>
-                            <h4>Create Employee</h4>
-                            <div>
-                                <label>First Name</label>
-                                <input type="text" name="firstName" value={data.firstName ?? ""} onChange={handleChange} required minLength={3} />
-                            </div>
-                            <div>
-                                <label>Last Name</label>
-                                <input type="text" name="lastName" value={data.lastName ?? ""} onChange={handleChange} required minLength={3} />
-                            </div>
-                            <div>
-                                <label>Profession</label>
-                                <input type="text" name="profession" value={data.profession ?? ""} onChange={handleChange} required minLength={3} />
-                            </div>
-                            <div>
-                                <label>Salary</label>
-                                <input type="text" name="salary" value={data.salary ?? ""} onChange={handleChange} required minLength={3} />
-                            </div>
-                            <div>
-                                <label>Avatar</label>
-                                <input type="text" name="avatarUrl" value={data.avatarUrl ?? ""} onChange={handleChange} required minLength={3} />
-                            </div>
-                            <div>
-                                <button type="submit">Save</button>
-                            </div>
-                        </form>
-                    </>
-                )
-            }
+            <Form method="post" autoComplete="off">
+                <h4>Create Employee</h4>
+                <input defaultValue={data?.id} name="id" style={{ display: "none" }} />
+                <div>
+                    <label>First Name</label>
+                    <input type="text" name="firstName" defaultValue={data?.firstName} required minLength={3} />
+                </div>
+                <div>
+                    <label>Last Name</label>
+                    <input type="text" name="lastName" defaultValue={data?.lastName} required minLength={3} />
+                </div>
+                <div>
+                    <label>Profession</label>
+                    <input type="text" name="profession" defaultValue={data?.profession} required minLength={3} />
+                </div>
+                <div>
+                    <label>Salary</label>
+                    <input type="text" name="salary" defaultValue={data?.salary} required minLength={3} />
+                </div>
+                <div>
+                    <label>Avatar</label>
+                    <input type="text" name="avatarUrl" defaultValue={data?.avatarUrl} required minLength={3} />
+                </div>
+                <div>
+                    <button type="submit">Save</button>
+                </div>
+            </Form>
         </>
     )
 }
